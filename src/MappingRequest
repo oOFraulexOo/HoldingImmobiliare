@@ -1,0 +1,196 @@
+import com.sap.aii.mapping.api.*;
+import com.sap.aii.mapping.lookup.*;
+import com.sap.aii.mappingtool.tf7.rt.*;
+import java.io.*;
+import java.lang.reflect.*;
+import java.util.*;
+import com.utilities.*;
+import org.apache.commons.io.IOUtils;
+import org.jdom2.Document;
+import org.jdom2.Document.*;
+import org.jdom2.Element;
+import org.jdom2.Element.*;
+import org.jdom2.JDOMException.*;
+import org.jdom2.Namespace;
+import org.jdom2.Namespace.*;
+import com.sap.ide.esr.tools.mapping.core.ExecutionType;
+import com.sap.ide.esr.tools.mapping.core.Argument;
+import com.sap.ide.esr.tools.mapping.core.Cleanup;
+import com.sap.ide.esr.tools.mapping.core.LibraryMethod;
+import com.sap.ide.esr.tools.mapping.core.Init;
+
+
+public class _MM_searchFolders_GO2DOC_Req_  {
+
+
+    public String sToken;
+
+    InputAttachments inputAttachments;
+
+    InputHeader inputHeader;
+
+    InputParameters inputParameters;
+
+    DynamicConfiguration dynamicConfiguration;
+
+    OutputAttachments outputAttachments;
+
+    OutputHeader outputHeader;
+
+    OutputParameters outputParameters;
+
+    public void transform(TransformationInput in, TransformationOutput out) throws StreamTransformationException{
+
+        try{
+
+            dynamicConfiguration = in.getDynamicConfiguration();
+            inputAttachments = in.getInputAttachments();
+            inputHeader = in.getInputHeader();
+            inputParameters = in.getInputParameters();
+            outputAttachments = out.getOutputAttachments();
+            outputHeader = out.getOutputHeader();
+            outputParameters = out.getOutputParameters();
+            InputStream is = (InputStream) in.getInputPayload().getInputStream();
+
+            InputPayloadImpl payloadInObj = new InputPayloadImpl(is);
+            TransformationInputImpl transformInObj = new TransformationInputImpl(payloadInObj);
+            OutputStream os = new ByteArrayOutputStream();
+            OutPayloadImpl payloadOutObj = new OutPayloadImpl(os);
+            TransformationOutputImpl transformOutObj = new TransformationOutputImpl(payloadOutObj);
+            // Graphical mapping called here, but the transformed stream is written to intermediate ByteArrayOutputStream 'os'
+            super.transform(transformInObj, transformOutObj);
+            OutputPayload outPayload = transformOutObj.getOutputPayload();
+            ByteArrayOutputStream baos1 = (ByteArrayOutputStream) outPayload.getOutputStream();
+            InputStream is1 = new ByteArrayInputStream(baos1.toByteArray());
+            //Java Mapping: This function code is nothing but your java mapping logic. You can also have INLINE code here
+            //ByteArrayOutputStream baos2 = AddEnvelope(is1);
+            byte[] baos2= AddEnvelope(is1);
+            // Finally write it to actual mapping runtime outputstream fetched from TransformationOutput
+            out.getOutputPayload().getOutputStream().write(baos2);
+        }
+
+        catch (Exception e){
+            throw new StreamTransformationException(e.getMessage());
+        }
+    }
+
+    private byte[] AddEnvelope(InputStream is1) {
+        //converto InputStream is1 in stringa e poi lo faccio diventare document staccando la root-->ho il Body da SearchDocument
+        String sInput= "";
+        //Document DocIn= null;
+        Element eln=null;
+        //mappare l'Header
+        Element eHeader= new Element("Header");
+        //prendere il parametro sToken e aggiungerlo all'header
+        Element eToken= new Element("authenticationToken");
+        Namespace ns = Namespace.getNamespace("doc", "http://document.g2d.ferservizi.it/");
+        eToken.setNamespace(ns);
+        //This method takes the text to be set as a parameter and sets the text of this StringCharacterIterator at that text
+        eToken.setText(sToken);
+        eHeader.addContent(eToken);
+        //Output
+        String sOutput="";
+        try {
+            sInput=IOUtils.toString(is1, "UTF-8");
+            eln=JdomUtil.StringToDocument(sInput).detachRootElement();
+            eln.setNamespace(ns);
+            sOutput=JdomUtil.addSoapEnvelop(eln, eHeader, "doc", "http://document.g2d.ferservizi.it/");
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return sOutput.getBytes();
+    }
+
+    class InputPayloadImpl extends InputPayload{
+        InputStream in;
+        public InputPayloadImpl(InputStream in){
+            this.in = in;
+        }
+        @Override
+        public InputStream getInputStream(){
+            return in;
+        }
+    }
+
+    class TransformationInputImpl extends TransformationInput{
+        InputPayload payload;
+        public DynamicConfiguration getDynamicConfiguration(){
+            return dynamicConfiguration;
+        }
+        public TransformationInputImpl(InputPayload payload){
+            this.payload = payload;
+        }
+        @Override
+        public InputAttachments getInputAttachments(){
+            return inputAttachments;
+        }
+        @Override
+        public InputHeader getInputHeader(){
+            return inputHeader;
+        }
+        @Override
+        public InputParameters getInputParameters(){
+            return inputParameters;
+        }
+        @Override
+        public InputPayload getInputPayload(){
+            return payload;
+        }
+    }
+
+    class OutPayloadImpl extends OutputPayload {
+        OutputStream ou;
+        public OutPayloadImpl(OutputStream ou){
+            this.ou = ou;}
+        @Override
+        public OutputStream getOutputStream(){
+            return ou;}
+    }
+
+    class TransformationOutputImpl extends TransformationOutput {
+        OutputPayload payload;
+        public TransformationOutputImpl(OutputPayload payload){
+            this.payload = payload;
+        }
+        @Override
+        public void copyInputAttachments(){ }
+        @Override
+        public OutputAttachments getOutputAttachments(){
+            return outputAttachments;
+        }
+        @Override
+        public OutputHeader getOutputHeader(){
+            return outputHeader;
+        }
+        @Override
+        public OutputParameters getOutputParameters() {
+            return outputParameters;
+        }
+        @Override
+        public OutputPayload getOutputPayload(){
+            return payload;
+        }
+    }
+
+
+    @Init(description="")
+    public void init (
+            GlobalContainer container)  throws StreamTransformationException{
+
+    }
+
+    @Cleanup
+    public void cleanup (
+            GlobalContainer container)  throws StreamTransformationException{
+
+    }
+
+    @LibraryMethod(title="SetToken", description="", category="User-Defined", type=ExecutionType.SINGLE_VALUE)
+    public String SetToken (
+            @Argument(title="")  String var1,
+            Container container)  throws StreamTransformationException{
+        this.sToken = var1;
+        return "";
+    }
+}

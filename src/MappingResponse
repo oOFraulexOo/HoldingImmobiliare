@@ -1,0 +1,167 @@
+package com.sap.xi.tf;
+
+import com.sap.aii.mapping.api.*;
+import com.sap.aii.mapping.lookup.*;
+import com.sap.aii.mappingtool.tf7.rt.*;
+import java.io.*;
+import java.lang.reflect.*;
+import java.util.*;
+import org.apache.commons.io.IOUtils;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
+import com.sap.xi.tf._MM_searchFolders_GO2DOC_Res_.InputPayloadImpl;
+import com.sap.xi.tf._MM_searchFolders_GO2DOC_Res_.TransformationInputImpl;
+import com.utilities.JdomUtil;
+import com.sap.ide.esr.tools.mapping.core.Cleanup;
+import com.sap.ide.esr.tools.mapping.core.Init;
+
+
+public class _MM_searchFolders_GO2DOC_Res_  {
+
+
+    InputAttachments inputAttachments;
+
+    InputHeader inputHeader;
+
+    InputParameters inputParameters;
+
+    DynamicConfiguration dynamicConfiguration;
+
+    OutputAttachments outputAttachments;
+
+    OutputHeader outputHeader;
+
+    OutputParameters outputParameters;
+
+    public void transform(TransformationInput in, TransformationOutput out) throws StreamTransformationException{
+        try
+        {
+            dynamicConfiguration = in.getDynamicConfiguration();
+            inputAttachments = in.getInputAttachments();
+            inputHeader = in.getInputHeader();
+            inputParameters = in.getInputParameters();
+            outputAttachments = out.getOutputAttachments();
+            outputHeader = out.getOutputHeader();
+            outputParameters = out.getOutputParameters();
+            InputStream is = (InputStream) in.getInputPayload().getInputStream();
+            //ByteArrayOutputStream baos = YourExtBussLogicMethod(is);
+            byte [] baos = RemoveEnvelope(is);
+            InputStream newInputStream = new ByteArrayInputStream(baos);
+            InputPayloadImpl payloadInObj = new InputPayloadImpl(newInputStream);
+            TransformationInputImpl transformInObj = new TransformationInputImpl(payloadInObj);
+            super.transform(transformInObj, out);
+        }
+
+        catch (Exception e){
+            throw new StreamTransformationException(e.getMessage());
+        }
+    }
+
+    private byte[] RemoveEnvelope(InputStream is) {
+
+        String sInput = "";
+        String eNodeName="searchFoldersResponse";
+        Namespace ns = Namespace.getNamespace("doc", "http://document.g2d.ferservizi.it/");
+        Element el = null;
+        String sOutput= "";
+
+        try {
+            sInput=IOUtils.toString(is, "UTF-8");
+            //richiamo il metodo remove
+            el = JdomUtil.removeSoapEnvelope(sInput, eNodeName);
+            el.setNamespace(ns);
+
+            //ConversioneJDom da element a stringa e poi byte
+            sOutput=JdomUtil.ConvertJDOM(el);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return sOutput.getBytes();
+    }
+
+    class InputPayloadImpl extends InputPayload{
+        InputStream in;
+        public InputPayloadImpl(InputStream in){
+            this.in = in;
+        }
+        @Override
+        public InputStream getInputStream(){
+            return in;
+        }
+    }
+
+    class TransformationInputImpl extends TransformationInput{
+        InputPayload payload;
+        public DynamicConfiguration getDynamicConfiguration(){
+            return dynamicConfiguration;
+        }
+        public TransformationInputImpl(InputPayload payload){
+            this.payload = payload;
+        }
+        @Override
+        public InputAttachments getInputAttachments(){
+            return inputAttachments;
+        }
+        @Override
+        public InputHeader getInputHeader(){
+            return inputHeader;
+        }
+        @Override
+        public InputParameters getInputParameters(){
+            return inputParameters;
+        }
+        @Override
+        public InputPayload getInputPayload(){
+            return payload;
+        }
+    }
+
+    class OutPayloadImpl extends OutputPayload {
+        OutputStream ou;
+        public OutPayloadImpl(OutputStream ou){
+            this.ou = ou;}
+        @Override
+        public OutputStream getOutputStream(){
+            return ou;}
+    }
+
+    class TransformationOutputImpl extends TransformationOutput {
+        OutputPayload payload;
+        public TransformationOutputImpl(OutputPayload payload){
+            this.payload = payload;
+        }
+        @Override
+        public void copyInputAttachments(){ }
+        @Override
+        public OutputAttachments getOutputAttachments(){
+            return outputAttachments;
+        }
+        @Override
+        public OutputHeader getOutputHeader(){
+            return outputHeader;
+        }
+        @Override
+        public OutputParameters getOutputParameters() {
+            return outputParameters;
+        }
+        @Override
+        public OutputPayload getOutputPayload(){
+            return payload;
+        }
+    }
+
+
+    @Init(description="")
+    public void init (
+            GlobalContainer container)  throws StreamTransformationException{
+
+    }
+
+    @Cleanup
+    public void cleanup (
+            GlobalContainer container)  throws StreamTransformationException{
+
+    }
+}

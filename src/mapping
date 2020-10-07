@@ -1,0 +1,150 @@
+import com.sap.aii.mapping.api.*;
+import com.sap.aii.mapping.lookup.*;
+import com.sap.aii.mappingtool.tf7.rt.*;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+
+        InputAttachments inputAttachments;
+        InputHeader inputHeader;
+        InputParameters inputParameters;
+        DynamicConfiguration dynamicConfiguration;
+        OutputAttachments outputAttachments;
+        OutputHeader outputHeader;
+        OutputParameters outputParameters;
+
+public void transform(TransformationInput in, TransformationOutput out) throws StreamTransformationException{
+        try
+        {
+        dynamicConfiguration = in.getDynamicConfiguration();
+        inputAttachments = in.getInputAttachments();
+        inputHeader = in.getInputHeader();
+        inputParameters = in.getInputParameters();
+        outputAttachments = out.getOutputAttachments();
+        outputHeader = out.getOutputHeader();
+        outputParameters = out.getOutputParameters();
+        InputStream is = (InputStream) in.getInputPayload().getInputStream();
+        /*
+         * **************************** GuideLines for Java Mapping ********************************************************************
+         * You can have java mapping code INLINE if it is few lines. And if it is a big and complex code, then I recommend to isolate
+         * java mapping logic and develop it separately as a NORMAL java program. Import it as 'imported archive' and refer it in graphical mapping
+         * And then call the externally developed public method here
+         * Recommendation for external method signature: public ByteArrayOutputStream YourExtBussLogicMethod(InputStream is, ...)
+         * **********************************************************************************************************************************
+         */
+        /*BEGIN ************************************************* PATTERN 1 (JM - GM) **************************************************/
+        //Java Mapping: YourExtBussLogicMethod(is) code is nothing but your java mapping logic. You can also have INLINE code here
+        ByteArrayOutputStream baos = YourExtBussLogicMethod(is);
+        InputStream newInputStream = new ByteArrayInputStream(baos.toByteArray());
+        InputPayloadImpl payloadInObj = new InputPayloadImpl(newInputStream);
+        TransformationInputImpl transformInObj = new TransformationInputImpl(payloadInObj);
+        //Graphical mapping called here
+        super.transform(transformInObj, out);
+        /*END ************************************************* PATTERN 1 (JM - GM) **************************************************/
+        /*BEGIN ************************************************* PATTERN 2 (GM - JM)  **************************************************/
+        InputPayloadImpl payloadInObj = new InputPayloadImpl(is);
+        TransformationInputImpl transformInObj = new TransformationInputImpl(payloadInObj);
+        OutputStream os = new ByteArrayOutputStream();
+        OutPayloadImpl payloadOutObj = new OutPayloadImpl(os);
+        TransformationOutputImpl transformOutObj = new TransformationOutputImpl(payloadOutObj);
+        // Graphical mapping called here, but the transformed stream is written to intermediate ByteArrayOutputStream 'os'
+        super.transform(transformInObj, transformOutObj);
+        OutputPayload outPayload = transformOutObj.getOutputPayload();
+        ByteArrayOutputStream baos1 = (ByteArrayOutputStream) outPayload.getOutputStream();
+        InputStream is1 = new ByteArrayInputStream(baos1.toByteArray());
+        //Java Mapping: This funciton code is nothing but your java mapping logic. You can also have INLINE code here
+        ByteArrayOutputStream baos2 = YourExtBussLogicMethod(is1);
+        // Finally write it to actual mapping runtime outputstream fetched from TransformationOutput
+        out.getOutputPayload().getOutputStream().write(baos2.toByteArray())
+        /*END ************************************************* PATTERN 2 (GM - JM) **************************************************/
+        /*BEGIN ************************************************* PATTERN 3 (JM1 - GM - JM2) **************************************************/
+        //Java Mapping1:This funciton code is nothing but your java mapping logic. You can also have INLINE code here
+        ByteArrayOutputStream baos = YourExtBussLogicMethod1(is);
+        InputStream newInputStream = new ByteArrayInputStream(baos.toByteArray());
+        InputPayloadImpl payloadInObj = new InputPayloadImpl(newInputStream);
+        TransformationInputImpl transformInObj = new TransformationInputImpl(payloadInObj);
+        OutputStream os = new ByteArrayOutputStream();
+        OutPayloadImpl payloadOutObj = new OutPayloadImpl(os);
+        TransformationOutputImpl transformOutObj = new TransformationOutputImpl(payloadOutObj);
+        // Graphical mapping called here, but the transformed stream is written to intermediate ByteArrayOutputStream 'os'
+        super.transform(transformInObj, transformOutObj);
+        OutputPayload outPayload = transformOutObj.getOutputPayload();
+        ByteArrayOutputStream baos1 = (ByteArrayOutputStream) outPayload.getOutputStream();
+        InputStream is1 = new ByteArrayInputStream(baos1.toByteArray());
+        //Java Mapping2:This funciton code is nothing but your java mapping logic. You can also have INLINE code here
+        ByteArrayOutputStream baos2 = YourExtBussLogicMethod2(is1);
+        //Finally write it to actual mapping runtime outputstream 'out' fetched from TransformationOutput
+        out.getOutputPayload().getOutputStream().write(baos2.toByteArray());
+        /*END ************************************************* PATTERN 3 (JM1 - GM - JM2) **************************************************/
+        }
+        catch (Exception e){
+        throw new StreamTransformationException(e.getMessage());
+        }
+        }
+class InputPayloadImpl extends InputPayload{
+    InputStream in;
+    public InputPayloadImpl(InputStream in){
+        this.in = in;
+    }
+    @Override
+    public InputStream getInputStream(){
+        return in;
+    }
+}
+class TransformationInputImpl extends TransformationInput{
+    InputPayload payload;
+    public DynamicConfiguration getDynamicConfiguration(){
+        return dynamicConfiguration;
+    }
+    public TransformationInputImpl(InputPayload payload){
+        this.payload = payload;
+    }
+    @Override
+    public InputAttachments getInputAttachments(){
+        return inputAttachments;
+    }
+    @Override
+    public InputHeader getInputHeader(){
+        return inputHeader;
+    }
+    @Override
+    public InputParameters getInputParameters(){
+        return inputParameters;
+    }
+    @Override
+    public InputPayload getInputPayload(){
+        return payload;
+    }
+}
+class OutPayloadImpl extends OutputPayload {
+    OutputStream ou;
+    public OutPayloadImpl(OutputStream ou){
+        this.ou = ou;}
+    @Override
+    public OutputStream getOutputStream(){
+        return ou;}
+}
+class TransformationOutputImpl extends TransformationOutput {
+    OutputPayload payload;
+    public TransformationOutputImpl(OutputPayload payload){
+        this.payload = payload;
+    }
+    @Override
+    public void copyInputAttachments(){ }
+    @Override
+    public OutputAttachments getOutputAttachments(){
+        return outputAttachments;
+    }
+    @Override
+    public OutputHeader getOutputHeader(){
+        return outputHeader;
+    }
+    @Override
+    public OutputParameters getOutputParameters() {
+        return outputParameters;
+    }
+    @Override
+    public OutputPayload getOutputPayload(){
+        return payload;
+    }
+}
